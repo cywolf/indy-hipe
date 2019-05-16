@@ -24,126 +24,179 @@ Bob and Alice want to connect so they can exchange messages.
 
 **Connection Offer** (Steps 1 on UML diagram below)
 
-Alices Agent sends Bob Agent a connection invitation out of band of the following form.
+Alice's Agent sends Bob's Agent an out-of-band connection invitation of the following form.
 
 ```json
 {
   "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/invitation",
-  "DID" : "<A.did@A:B>",
-  "label" : "Alice"
+  "label" : "Alice",
+  "recipientKeys": ["8HH5gYEeNc3z7PYXmd54d4x6qAfCNrqQqEB3nS7Zfu7K"],
+  "serviceEndpoint": "https://example.com/endpoint"
 }
 ```
 
-Prior to Bob sending Alice a connection request, in response to this invite, some setup is required to host the connection and establish its delivery path.
-
-Lets assume the below about the delivery path of messages to Bob's Agent from Alices Agent once they are connected.
+In this case Alice's Agent is directly contactable by Bob's Agent with no additional routing required. Bob's Agent, however, elects to receive messages through a mediator, Agents-r-us.
 
 ![Example Domains: Alice and Bob](scenario1.png)
 
-Note - lets also assume that Alice's agent (for Bob) is directly contactable and has no routing required.
+Bob decides to accept the connection invitation and intends to send Alice's Agent a connection request. Some setup is required to establish the return delivery path before this can be done.
 
-Bob first generates the following pairwise DID that he will disclosed in a connection request to Alice.
+Bob first generates the following pairwise DID and corresponding verkey that he will disclose to Alice.
 
-`B.did@B:A`
+`B.did@B:A`  Pairwise DID to be disclosed to Alice by Bob
+
+`B.verkey@B:A`  Verification key to be disclosed to Alice by Bob
 
 **Routing Record Setup** (Steps 2-4 on UML diagram below)
 
-In order for a message to successfully reach Bob from Alice via the elected mediator (agents-r-us), Bob must now connect with agents-r-us and create a routing record to establish the delivery path back to his agent. 
+In order for a message to successfully reach Bob from Alice via the elected mediator (Agents-r-us), Bob's Agent must now connect with Agents-r-us and create a routing record to establish the delivery path back to his agent.
 
-Note - for this example it is assumed that agents-r-us and Bobs agent have connected previously and have the following pairwise DID's denoting their relationship (DIDDocs for these DID's would also have been exchanged via microledgers).
+Note - for this example it is assumed that Agents-r-us and Bob's Agent have connected previously and have the following pairwise DIDs denoting their relationship (DIDDocs for these DIDs would have been exchanged via the connection protocol).
 
 `B.did@B:C` Pairwise DID disclosed by Bob to Agents-r-us
 
 `C.did@C:B` Pairwise DID disclosed by Agents-r-us to Bob
 
-In the presence of this connection, Bob's agent prepares the following message to agents-r-us.
+`C.verkey@C:B` Verification key disclosed by Agents-r-us to Bob
+
+`C.endpoint@C:B` Service endpoint employed by Agents-r-us
+
+In the presence of this connection, Bob's Agent prepares the following message for Agents-r-us:
 
 ```json
 {
- "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/routing/0.1/create",
- "recipient-identifier" : "<B.did@B:A>"
-}
-```
-
-Note - with the wire level message used to transport the above, agents-r-us MUST be able to recover the sender. As this is the basis for the routing record.
-
-On processing of this message agents-r-us creates the following routing record which is stored locally.
-
-```json
-{
- "recipient-identifier" : "<B.did@B:A>",
- "DID" : "<B.did@B:C>"
-}
-```
-
-Note - the DID shown above is resolved by recovering the sender from the wire message.
-
-**Connection Request** (Step 5 on UML diagram below)
-
-On confirmation from agents-r-us to Bobs agent that the routing record now exists, Bob sends the following connection request to Alice.
-
-```json
-{
-  "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/request",
-  "DID": "<B.did@B:A>",
-  "label": "Bob"
-}
-```
-
-The DIDDoc assumed to be transmitted along side this connection request via microledger to Alice takes the following form.
-
-```json
-{
-  "@context": "https://w3id.org/did/v1",
-  "id": "<B.did@B:A>",
-  "publicKey": [
-    {"id": "1", "type": "RsaVerificationKey2018",  "owner": "<B.did@B:A>","publicKeyBase58": "<B.vk@B:A>"}
-  ],
-  "authentication": [
-    {"type": "RsaSignatureAuthentication2018", "publicKey": "<B.pk@B:A>"}
-  ],
-  "service": [
-    {"type": "Agency", "serviceEndpoint": "<C.did>" }
+  "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/routing/1.0/route-update-request",
+	"@id": "uuid:1",
+  "updates": [
+    {
+      "recipient_key": "<B.verkey@B:A>",
+      "action": "create"
+    }
   ]
 }
 ```
 
+Note - Agents-r-us MUST be able to associate the incoming message with an existing pairwise connection, as this determines how incoming messages are forwarded to Bob. This association is determined by the sender verkey used to encrypt the wire message.
+
+Agents-r-us receives this message and adds a new routing record, associating the provided recipient key with the current pairwise connection. It sends back a summary of the changes so that Bob's Agent can verify that the record was added:
+
+```json
+{
+  "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/routing/1.0/route-update-response",
+  "@id": "uuid:2",
+  "~thread": {
+    "thid": "uuid:1"
+  },
+  "updated": [
+    {
+      "recipient_key": "<B.verkey@B:A>",
+      "action": "create",
+      "result": "success"
+    }
+  ]
+}
+```
+
+**Connection Request** (Step 5 on UML diagram below)
+
+Once Bob's Agent has received the routing update confirmation, Bob sends the following connection request to Alice:
+
+```json
+{
+  "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/request",
+  "@id": "uuid:3",
+  "label": "Bob",
+  "connection": {
+    "did": "<B.did@B:A>",
+    "did_doc": {
+      "@context": "https://w3id.org/did/v1",
+      "id": "<B.did@B:A>",
+      "publicKey": [
+          {
+            "id": "1",
+            "type": "RsaVerificationKey2018",
+            "controller": "<B.did@B:A>",
+            "publicKeyBase58": "<B.verkey@B:A>"
+          }
+      ],
+      "authentication": [
+        {
+          "type": "RsaSignatureAuthentication2018",
+          "publicKey": "<B.verkey@B:A>"
+        }
+      ],
+      "service": [
+        {
+          "id": "indy",
+          "type": "Agency",
+          "recipientKeys": ["<B.verkey@B:A>"],
+          "routingKeys": ["C.verkey@C:B"],
+          "serviceEndpoint": "<C.endpoint>"
+        }
+      ]
+    }
+  }
+}
+```
+
+
 **Connection Response** (Steps 6-10 on UML diagram below)
 
-Now Alice and Bob have exchanged pairwise DID's, Alice prepares the following message for Bob to complete the connection process, the below also shows how a message from Alice propagates to Bob via agents-r-us.
-
-Alice's agent prepares the following message 
+Now Alice has received the connection request from Bob along with the DIDDoc Bob's Agent generated for this connection. Alice prepares the following connection response message for Bob to complete the connection process:
 
 ```json
 {
   "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/connections/1.0/response",
-  "result": "accepted || rejected"
+  "@id": "uuid:4",
+  "~thread": {
+    "thid": "uuid:3"
+  },
+  "connection": {
+    "did": "<A.did@A:B>",
+    "did_doc": {
+      "@context": "https://w3id.org/did/v1",
+      "id": "<A.did@A:B>",
+      "publicKey": [
+          {
+            "id": "1",
+            "type": "RsaVerificationKey2018",
+            "controller": "<A.did@A:B>",
+            "publicKeyBase58": "<A.verkey@A:B>"
+          }
+      ],
+      "authentication": [
+        {
+          "type": "RsaSignatureAuthentication2018",
+          "publicKey": "<A.verkey@A:B>"
+        }
+      ],
+      "service": [
+        {
+          "id": "indy",
+          "type": "Agency",
+          "recipientKeys": ["A.verkey@A:B"],
+          "routingKeys": [],
+          "serviceEndpoint": "https://example.com/endpoint"
+        }
+      ]
+    }
+  }
 }
 ```
 
-Alices agent now takes the above message, packs it for Bob and prepares the following message for agents-r-us and sends.
+Alice's Agent now takes the above message and packs it into a wire message for Bob. Because Bob's DIDDoc lists a routing key, Alice's Agent must wrap the wire message in an additional Forward message with the `to` property set to the Bob's recipient key:
 
 ```json
 {
-  "@type" : "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/routing/1.0/forward",
-  "to"   : "<B.did@B:A>",
-  "msg"  : "<packed-msg>"
+  "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/routing/1.0/forward",
+  "to": "<B.verkey@B:A>",
+  "msg": "<packed-msg>"
 }
 ```
 
-Note - with the wire level message used to transport the above, agents-r-us SHOULD NOT be able to recover the sender, as this is unnecessary disclosure of information and isn't required for agents-r-us to be able to route the message to Alice.  
+This Forward message is packed using the routing key, so that it can only be unpacked by Agents-r-us. No sender verification key is provided (the message is anon-encrypted), and Agents-r-us SHOULD NOT be able to recover the sender, as this is an unnecessary disclosure of information. The message is delivered to the endpoint Bob listed in the DIDDoc provided to Alice, which is the public endpoint of Agents-r-us.
 
-Agents-r-us receiving the above message from Alice, looks up its routing records based on the `to` field and finds the following record, as first shown above.
-
-```json
-{
- "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/routing/0.1/route",
- "recipient-identifier" : "<B.did@B:A>",
- "DID" : "<B.did@B:C>"
-}
-```
-
-With this information Agents-r-us looks up DID `B.did@B:C` in its connection list for contact information and transmits the message to Bobs agent therefore completing the message delivery.
+Upon receiving and unpacking the Forward message, Agents-r-us searches its routing records for the recipient key contained in the `to` field. It finds the recipient key is associated with the pairwise connection it has formed with Bob. Agents-r-us then looks up the details of the pairwise connection and its related contact information (contained in the DIDDoc Bob provided to Agents-r-us), then transmits the contents of the `msg` field to Bob's Agent, completing the message delivery.
 
 **Sequence Diagram**
 
