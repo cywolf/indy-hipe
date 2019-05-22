@@ -9,19 +9,19 @@ actor "Alice (A)" as Alice
 
 == New Routing Record Setup ==
 
-Bob -> Delta : { route-update-request }/B:D\nupdates[ ( recipient_key: <color green>B.verkey@B:A</color>, action: create )]
+Bob -> Delta : { route-update-request }/B:D\nupdates[ (\n    recipient_key: B.verkey@B:A, action: create\n) ]
 Delta -> Delta : routing-records[ D:B ] = [ B.verkey@A:B ]
 Bob <-- Delta : { route-update-response }/D:B
 
 == Advise Relying Parties ==
 
-Bob -> Alice : DIDDoc(publicKey: <color green>B.verkey@B:A</color>, serviceEndpoint: D.endpoint)
+Bob -> Alice : DIDDoc( id: B.did@B:A,\n    recipientKeys: [B.verkey@B:A],\n    routingKeys: [<color blue>D.verkey@D:B</color>],\n    serviceEndpoint: <color blue>D.endpoint</color> )
 
 ... This is performed for all relying parties ...
 
 == Existing Routing Record Removal ==
 
-Bob -> Charles : { route-update-request }/B:C\nupdates[ ( recipient_key: B.verkey@B:A, action: <color green>delete</color>) ]
+Bob -> Charles : { route-update-request }/B:C\nupdates[ (\n    recipient_key: B.verkey@B:A, action: <color green>delete</color>\n) ]
 Bob <-- Charles : { route-update-response }/C:B
 
 Alice -> Delta : All subsequent messages

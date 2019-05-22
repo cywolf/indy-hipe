@@ -16,12 +16,12 @@ Bob <-- aru : { route-update-response }/C:B
 
 == Connection Request ==
 
-Bob -> Alice :  { connection-request( DID: B.did@B:A ) }/B:A\nDIDDoc(publicKey: <color green>B.verkey@B:A</color>, serviceEndpoint: <color green>C.endpoint</color>)
+Bob -> Alice :  { connection-request }/B:A\ndid_doc( id: B.did@B:A, recipientKeys: [<color green>B.verkey@B:A</color>],\n    routingKeys: [<color blue>C.verkey@C:B</color>], serviceEndpoint: <color blue>C.endpoint</color> )
 
 == Connection Response ==
 
-Alice -> Alice : pack { connection-response( DID: A.did@A:B ) }/A:B\nDIDDoc(publicKey: A.verkey@A:B, serviceEndpoint: A.endpoint)
-Alice -> aru : { forward( to: <color green>B.verkey@B:A</color> msg:connection-response ) }/A:C
+Alice -> Alice : pack { connection-response }/A:B\ndid_doc( id: A.did@A:B, recipientKeys: [A.verkey@A:B], serviceEndpoint: A.endpoint )
+Alice -> aru : { forward( to: <color green>B.verkey@B:A</color> msg: connection-response ) }/A:C
 aru -> aru : Look up routing\nrouting-records[ <color green>B.verkey@B:A</color> ] => C:B
 Bob <- aru : { connection-response }/C:B
 
