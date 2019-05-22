@@ -1,5 +1,5 @@
 - Name: agent-message-routing
-- Author: Tobias Looker & Daniel Zollinger
+- Author: Tobias Looker, Daniel Zollinger, Andrew Whitehead
 - Start Date: 2018-11-22
 - PR: (leave this empty)
 - Jira Issue: (leave this empty)
