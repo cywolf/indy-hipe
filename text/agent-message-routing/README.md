@@ -318,14 +318,14 @@ Query the list of defined routes from a routing agent.
 
 ```json
 {
-	"@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/routing/1.0/route-query-request",
-	"filter": {
-		"recipient_key": ["<recipient-key>", ...]
-	},
-	"paginate": {
-		"limit": 100,
-		"offset": 0
-	}
+  "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/routing/1.0/route-query-request",
+  "filter": {
+    "recipient_key": ["<recipient-key>", ...]
+  },
+  "paginate": {
+    "limit": 100,
+    "offset": 0
+  }
 }
 ```
 
@@ -343,18 +343,18 @@ Return the list of defined routes from a routing agent.
 
 ```json
 {
-	"@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/routing/1.0/route-query-response",
-	"routes": [
-		{
-			"recipient_key": "<recipient-key>"
-		}
-	],
-	"paginated": {
-		"start": 0,
-		"limit": 100,
-		"end": 1,
-		"total": 1
-	}
+  "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/routing/1.0/route-query-response",
+  "routes": [
+    {
+      "recipient_key": "<recipient-key>"
+    }
+  ],
+  "paginated": {
+    "start": 0,
+    "limit": 100,
+    "end": 1,
+    "total": 1
+  }
 }
 ```
 
@@ -365,13 +365,13 @@ Request the addition and removal of routes from a routing agent.
 
 ```json
 {
-	"@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/routing/1.0/route-update-request",
-	"updates": [
-		{
-			"recipient_key": "<recipient-key>",
-			"action": "create"
-		}
-	]
+  "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/routing/1.0/route-update-request",
+  "updates": [
+    {
+      "recipient_key": "<recipient-key>",
+      "action": "create"
+    }
+  ]
 }
 ```
 
@@ -384,14 +384,14 @@ either `create` or `delete`.
 
 ```json
 {
-	"@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/routing/1.0/route-update-response",
-	"updated": [
-		{
-			"recipient_key": "<recipient-key>",
-			"action": "create",
-			"result": "success"
-		}
-	]
+  "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/routing/1.0/route-update-response",
+  "updated": [
+    {
+      "recipient_key": "<recipient-key>",
+      "action": "create",
+      "result": "success"
+    }
+  ]
 }
 ```
 
