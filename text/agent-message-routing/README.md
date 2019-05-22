@@ -35,7 +35,7 @@ Alice's Agent sends Bob's Agent an out-of-band connection invitation of the foll
 }
 ```
 
-In this case Alice's Agent is directly contactable by Bob's Agent with no additional routing required. Bob's Agent, however, elects to receive messages through a mediator, Agents-r-us.
+In this case Alice's Agent is directly contactable by Bob's Agent with no additional routing required. Bob's Agent, however, elects to receive messages through a mediator, Agents-R-Us.
 
 ![Example Domains: Alice and Bob](scenario1.png)
 
@@ -49,24 +49,26 @@ Bob first generates the following pairwise DID and corresponding verkey that he 
 
 **Routing Record Setup** (Steps 2-4 on UML diagram below)
 
-In order for a message to successfully reach Bob from Alice via the elected mediator (Agents-r-us), Bob's Agent must now connect with Agents-r-us and create a routing record to establish the delivery path back to his agent.
+In order for a message to successfully reach Bob from Alice via the elected mediator (Agents-R-Us), Bob's Agent must now connect with Agents-R-Us and create a routing record to establish the delivery path back to his agent.
 
-Note - for this example it is assumed that Agents-r-us and Bob's Agent have connected previously and have the following pairwise DIDs denoting their relationship (DIDDocs for these DIDs would have been exchanged via the connection protocol).
+Note - for this example it is assumed that Agents-R-Us and Bob's Agent have connected previously and have the following pairwise DIDs denoting their relationship (DIDDocs for these DIDs would have been exchanged via the connection protocol).
 
-`B.did@B:C` Pairwise DID disclosed by Bob to Agents-r-us
+`B.did@B:C` Pairwise DID disclosed by Bob to Agents-R-Us
 
-`C.did@C:B` Pairwise DID disclosed by Agents-r-us to Bob
+`B.verkey@B:C` Verification key disclosed by Bob to Agents-R-Us
 
-`C.verkey@C:B` Verification key disclosed by Agents-r-us to Bob
+`C.did@C:B` Pairwise DID disclosed by Agents-R-Us to Bob
 
-`C.endpoint@C:B` Service endpoint employed by Agents-r-us
+`C.verkey@C:B` Verification key disclosed by Agents-R-Us to Bob
 
-In the presence of this connection, Bob's Agent prepares the following message for Agents-r-us:
+`C.endpoint` Service endpoint employed by Agents-R-Us
+
+In the presence of this connection, Bob's Agent prepares the following message for Agents-R-Us:
 
 ```json
 {
   "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/routing/1.0/route-update-request",
-	"@id": "uuid:1",
+  "@id": "uuid:1",
   "updates": [
     {
       "recipient_key": "<B.verkey@B:A>",
@@ -76,9 +78,9 @@ In the presence of this connection, Bob's Agent prepares the following message f
 }
 ```
 
-Note - Agents-r-us MUST be able to associate the incoming message with an existing pairwise connection, as this determines how incoming messages are forwarded to Bob. This association is determined by the sender verkey used to encrypt the wire message.
+Note - Agents-R-Us MUST be able to associate the incoming message with an existing pairwise connection, as this determines how incoming messages are forwarded to Bob. This association is determined by the sender verkey used to encrypt the wire message.
 
-Agents-r-us receives this message and adds a new routing record, associating the provided recipient key with the current pairwise connection. It sends back a summary of the changes so that Bob's Agent can verify that the record was added:
+Agents-R-Us receives this message and adds a new routing record, associating the provided recipient key with the current pairwise connection. It sends back a summary of the changes so that Bob's Agent can verify that the record was added:
 
 ```json
 {
@@ -112,17 +114,11 @@ Once Bob's Agent has received the routing update confirmation, Bob sends the fol
       "@context": "https://w3id.org/did/v1",
       "id": "<B.did@B:A>",
       "publicKey": [
-          {
-            "id": "1",
-            "type": "RsaVerificationKey2018",
-            "controller": "<B.did@B:A>",
-            "publicKeyBase58": "<B.verkey@B:A>"
-          }
-      ],
-      "authentication": [
         {
-          "type": "RsaSignatureAuthentication2018",
-          "publicKey": "<B.verkey@B:A>"
+          "id": "1",
+          "type": "RsaVerificationKey2018",
+          "controller": "<B.did@B:A>",
+          "publicKeyBase58": "<B.verkey@B:A>"
         }
       ],
       "service": [
@@ -157,17 +153,11 @@ Now Alice has received the connection request from Bob along with the DIDDoc Bob
       "@context": "https://w3id.org/did/v1",
       "id": "<A.did@A:B>",
       "publicKey": [
-          {
-            "id": "1",
-            "type": "RsaVerificationKey2018",
-            "controller": "<A.did@A:B>",
-            "publicKeyBase58": "<A.verkey@A:B>"
-          }
-      ],
-      "authentication": [
         {
-          "type": "RsaSignatureAuthentication2018",
-          "publicKey": "<A.verkey@A:B>"
+          "id": "1",
+          "type": "RsaVerificationKey2018",
+          "controller": "<A.did@A:B>",
+          "publicKeyBase58": "<A.verkey@A:B>"
         }
       ],
       "service": [
@@ -194,169 +184,227 @@ Alice's Agent now takes the above message and packs it into a wire message for B
 }
 ```
 
-This Forward message is packed using the routing key, so that it can only be unpacked by Agents-r-us. No sender verification key is provided (the message is anon-encrypted), and Agents-r-us SHOULD NOT be able to recover the sender, as this is an unnecessary disclosure of information. The message is delivered to the endpoint Bob listed in the DIDDoc provided to Alice, which is the public endpoint of Agents-r-us.
+This `forward` message is packed using the routing key, so that it can only be unpacked by Agents-R-Us. No sender verification key is provided (the message is anon-encrypted), and Agents-R-Us SHOULD NOT be able to recover the sender, as this is an unnecessary disclosure of information. The message is delivered to the endpoint Bob listed in the DIDDoc provided to Alice, which is the public endpoint of Agents-R-Us.
 
-Upon receiving and unpacking the Forward message, Agents-r-us searches its routing records for the recipient key contained in the `to` field. It finds the recipient key is associated with the pairwise connection it has formed with Bob. Agents-r-us then looks up the details of the pairwise connection and its related contact information (contained in the DIDDoc Bob provided to Agents-r-us), then transmits the contents of the `msg` field to Bob's Agent, completing the message delivery.
+Upon receiving and unpacking the `forward` message, Agents-R-Us searches its routing records for the recipient key contained in the `to` field. It finds the recipient key is associated with the pairwise connection it has formed with Bob. Agents-R-Us then looks up the details of the pairwise connection and its related contact information (contained in the DIDDoc Bob provided to Agents-R-Us), then transmits the contents of the `msg` field to Bob's Agent, completing the message delivery.
 
 **Sequence Diagram**
 
 The below sequence diagram depicts the above example
 
-![New Connection Sequence Diagram](new-connection-sequence.png)
+![New Connection Sequence Diagram](new-connection-sequence.svg)
 
 ## Change Agent Mediator Example
 
-`Note - in order for this example to make the most sense it is advised that the previous example is read prior.`
+`Note - in order for this example to make the most sense it is advised that the previous example be read prior.`
 
-Lets assume the following state, Bob and Alice are connected and the delivery path for messages from Alice to Bob take the following path.
+Let's assume the following state, where Bob's Agent and Alice's Agent are connected and the delivery path for messages from Alice to Bob take the following path.
 
 ![Example Domains: Alice and Bob](scenario1.png)
 
-Restated here for clarity is the pairwise Did Bob has disclosed to Alice when connecting.
+Restated here for clarity is the pairwise DID Bob has disclosed to Alice when connecting.
 
 `B.did@B:A`
 
-However Bob has now decided that he no longer wants to use agents-r-us as the mediator for messages being delivered from Alice to him.
-
-Instead he wants to use the new provider agents-4-all, the below diagram depicts what Bob ultimately wants to achieve.
+However Bob has now decided that he no longer wants to use Agents-R-Us as the mediator for messages being delivered from Alice to him. Instead he wants to use the new provider Agents-4-All. The below diagram depicts the routing scenario that Bob ultimately wants to achieve.
 
 ![Example Domains: Alice and Bob](scenario2.PNG)
 
-**New Routing Record Setup** (steps 1,2 and 3 on the UML diagram below)
+**New Routing Record Setup** (steps 1, 2 and 3 on the UML diagram below)
 
-Prior to Bob updating the DIDDoc he has previously shared with Alice about how to deliver messages to him, there is some setup and transfer required.
+Prior to Bob updating the DIDDoc he has previously shared with Alice describing how to deliver messages to him, there is some setup required to enable the correct routing of future messages.
 
-In order for a message to successfully reach Bob from Alice via the newly elected mediator (agents-4-all), Bob must now connect with agents-4-all and create a routing record to establish the delivery path back to his agent. 
+In order for a message to successfully reach Bob from Alice via the newly elected mediator (Agents-4-All), Bob must now connect with Agents-4-All and create a routing record to establish the delivery path back to his agent. 
 
-Note - for this example it is assumed that agents-4-all and Bobs agent have now connected and the following pairwise DID's denoting their relationship have been exchanged (DIDDocs for these DID's would also have been exchanged via microledgers).
+Note - for this example it is assumed that Agents-4-All and Bob's Agent have established a pairwise connection and the following pairwise DID's denoting their relationship have been exchanged (DIDDocs for these DIDs would also have been exchanged via the connection protocol).
 
-`B.did@B:D` Pairwise DID disclosed by Bob to Agents-4-all
+`B.did@B:D` Pairwise DID disclosed by Bob to Agents-4-All
 
-`D.did@D:B` Pairwise DID disclosed by Agents-4-all to Bob
+`B.verkey@B:D` Verification key disclosed by Bob to Agents-4-All
 
-With this connection Bob prepares the following message for agents-4-all.
+`D.did@D:B` Pairwise DID disclosed by Agents-4-All to Bob
 
-```json
-{
- "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/routing/0.1/create",
- "recipient-identifier" : "<B.did@B:A>"
-}
-```
+`D.verkey@D:B` Verification key disclosed by Agents-4-All to Bob
 
-Bobs agent then packs this message for agents-4-all
-
-`pack(AgentMessage,valueOf(<D.did@D:B>), privKey(<B.vk@B:D>))`
-
-Note - with this wire level message agents-4-all MUST be able to recover the sender. As this is the basis for the routing record.
-
-On processing of this message agents-4-all creates the following routing record which is stored locally.
+Making use of this pairwise connection, Bob prepares the following message for Agents-4-All:
 
 ```json
 {
- "recipient-identifier" : "<B.vk@B:A>",
- "DID" : "<B.did@B:D>"
+  "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/routing/1.0/route-update-request",
+  "@id": "uuid:5",
+  "updates": [
+    {
+      "recipient_key": "<B.verkey@B:A>",
+      "action": "create"
+    }
+  ]
 }
 ```
+
+Bob's Agent then packs this message for Agents-4-All:
+
+`pack(AgentMessage,valueOf(<D.verkey@D:B>), privKey(<B.verkey@B:D>))`
+
+Note - with this wire level message Agents-4-All MUST be able to recover the sender, as this is the basis for the routing record.
+
+Upon processing of this message Agents-4-All creates a new internal routing record linking the `recipient_key` provided by Bob to the pairwise connection between Bob and Agents-4-All.
+
 
 **Advise relying parties** (steps 4 on the UML diagram below)
 
-On confirmation from agents-4-all this routing record has been commited, Bob can now proceed with updating his DIDDoc (note likely to occur via microledgers) he has shared with Alice to use agents-4-all as the mediator. The final form of his new DIDDoc will take the following.
+On confirmation from Agents-4-All that this routing record update has been committed, Bob can now proceed with updating the DIDDoc he has shared with Alice to use Agents-4-All as the mediator. The final form of his new DIDDoc will resemble the following:
 
 ```json
 {
   "@context": "https://w3id.org/did/v1",
   "id": "<B.did@B:A>",
   "publicKey": [
-    {"id": "1", "type": "RsaVerificationKey2018",  "owner": "<B.did@B:A>","publicKeyBase58": "<B.vk@B:A>"}
-  ],
-  "authentication": [
-    {"type": "RsaSignatureAuthentication2018", "publicKey": "<B.pk@B:A>"}
+    {
+      "id": "1",
+      "type": "RsaVerificationKey2018",
+      "controller": "<B.did@B:A>",
+      "publicKeyBase58": "<B.verkey@B:A>"
+    }
   ],
   "service": [
-    {"type": "Agency", "serviceEndpoint": "<D.did>" }
+    {
+      "id": "indy",
+      "type": "Agency",
+      "recipientKeys": ["<B.verkey@B:A>"],
+      "routingKeys": ["D.verkey@D:B"],
+      "serviceEndpoint": "<D.endpoint>"
+    }
   ]
 }
 ```
 
 **Existing Routing Record Removal** (steps 5-6 on the UML diagram below)
 
-Now that Bob has established a new delivery path via agents-4-all and communicated this change to Alice, he can now remove routing records he once had with agents-4-us.
+Now that Bob has established a new delivery path via Agents-4-All and communicated this change to Alice, he can remove the routing record he once had with Agents-R-Us.
 
-In order to remove this routing record, Bob's agent prepares the following message to agents-r-us.
-
-```json
-{
- "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/routing/0.1/delete",
- "recipient-identifier" : "<B.did@B:A>"
-}
-```
-
-Note - with the wire level message used to transport the above, agents-r-us MUST be able to recover the sender. As this is how agents-4-us identifies the owner of the routing record.
-
-Agents-4-us looks up its local routing records it has for Bob and finds the following and deletes it.
+In order to remove this routing record, Bob's agent prepares and sends the following message to Agents-R-Us:
 
 ```json
 {
- "recipient-identifier" : "<B.did@B:A>",
- "DID" : "<B.did@B:C>"
+  "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/routing/1.0/route-update-request",
+  "@id": "uuid:6",
+  "updates": [
+    {
+      "recipient_key": "<B.verkey@B:A>",
+      "action": "delete"
+    }
+  ]
 }
 ```
+
+Note - with the wire level message used to transport the above, Agents-R-Us MUST be able to recover the sender, as this is how Agents-R-us identifies the pairwise connection it maintains with Bob.
+
+Agents-R-Us looks up its local routing records and removes the recipient key `B.verkey@B:A`, meaning that any future `forward` messages received for that key will not be forwarded to Bob.
+
 
 **Sequence Diagram**
 
 The below sequence diagram depicts the above example
 
-![Change Agent Mediator Sequence Diagram](change_agent_mediator_sequence.png)
+![Change Agent Mediator Sequence Diagram](change_agent_mediator_sequence.svg)
 
 ## Routing record definitions
 The following A2A message type definitions are required for the maintenance of routing records
 
-Create Routing Record Message
+
+**Route Query Request**
+
+Query the list of defined routes from a routing agent.
 
 ```json
 {
- "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/routing/0.1/create",
- "recipient-identifier" : "<recipient-identifier>"
+	"@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/routing/1.0/route-query-request",
+	"filter": {
+		"recipient_key": ["<recipient-key>", ...]
+	},
+	"paginate": {
+		"limit": 100,
+		"offset": 0
+	}
 }
 ```
 
-Delete Routing Record Message
+The `filter` property (optional) is a dictionary containing lists of allowed values.
+The only filter currently supported is `recipient_key`.
+
+The `paginate` property (optional) is a dictionary with optional `offset` and `limit`
+values, defining the first index and maximum number of items to return, respectively. The
+routing agent may return fewer than `limit` records at its discretion.
+
+
+**Route Query Response**
+
+Return the list of defined routes from a routing agent.
 
 ```json
 {
- "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/routing/0.1/delete",
- "recipient-identifier" : "<recipient-identifier>"
+	"@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/routing/1.0/route-query-response",
+	"routes": [
+		{
+			"recipient_key": "<recipient-key>"
+		}
+	],
+	"paginated": {
+		"start": 0,
+		"limit": 100,
+		"end": 1,
+		"total": 1
+	}
 }
 ```
 
-Get Routing Records Message
+
+**Route Update Request**
+
+Request the addition and removal of routes from a routing agent.
 
 ```json
 {
- "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/routing/0.1/get"
+	"@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/routing/1.0/route-update-request",
+	"updates": [
+		{
+			"recipient_key": "<recipient-key>",
+			"action": "create"
+		}
+	]
 }
 ```
 
-Routing Records Message
+The `updates` property is required and contains a list of route update entries. Each entry
+must define a `recipient_key` (verification key in base58 format) and an `action`, which is
+either `create` or `delete`.
+
+
+**Route Update Response**
 
 ```json
 {
- "@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/routing/0.1/routes",
- "recipient-identifiers" : ["<recipient-identifier>"]
+	"@type": "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/routing/1.0/route-update-response",
+	"updated": [
+		{
+			"recipient_key": "<recipient-key>",
+			"action": "create",
+			"result": "success"
+		}
+	]
 }
 ```
 
-Forward to multiple recipients
+The possible `result` values for an entry in the `updated` routes list are as follows:
 
-```json
-{
-  "@type" : "did:sov:BzCbsNYhMrjHiqZDTUASHg;spec/routing/1.0/forward-multiple",
-  "to"   : [ "<B.1.did:A:B>", "<B.2.did:A:B>", "<B.3.did:A:B>" ],
-  "msg"  : "<pack(AgentMessage,valueOf(<B.1.vk>), privKey(<A.1.sk@A:B>))>"
-}
-```
+- `success`: The action was performed as requested.
+- `no_change`: The action was not needed (route already exists on creation,
+  or route does not exist on deletion).
+- `client_error`: The action could not be performed because of a client error (bad request).
+  The request should not be retried without adjustment.
+- `server_error`: The action could not be performed because of a server error. The request
+  may be retried.
 
-Note - the above message type is a variation on the `forward message type` that was proposed [here](https://github.com/hyperledger/indy-hipe/tree/master/text/0022-cross-domain-messaging)
 
 # Reference
 
@@ -365,11 +413,13 @@ Note - the above message type is a variation on the `forward message type` that 
 - [Agent to Agent Communication Video](https://drive.google.com/file/d/1PHAy8dMefZG9JNg87Zi33SfKkZvUvXvx/view)
 - [Agent to Agent Communication Presentation](https://docs.google.com/presentation/d/1H7KKccqYB-2l8iknnSlGt7T_sBPLb9rfTkL-waSCux0/edit#slide=id.p)
 
+
 # Drawbacks
 
 - Route spoofing is only prevented by the agent first creating routing records prior to disclosing connection information to another party.
 - Suitability of A2A messaging protocol for administering routing records.
-- Imposes the constrain that certain A2A messages must be authcrypt to recover the sender in order for them to be valid. 
+- Imposes the constraint that certain A2A messages must be authcrypted to recover the sender in order for them to be valid.
+
 
 # Rationale and alternatives
 
@@ -377,6 +427,8 @@ Note - the above message type is a variation on the `forward message type` that 
 - A challenge request response type pattern for authentication of the recipient identifier.
 - Routing based on the pairwise verkey instead of the did, this potentially reduces the information disclosure to the intermediate agent and makes it far simplier to implement a challenge request response protocol, but increases complexity around key rotation?
 
+
 # Unresolved questions
 
 - Assumptions about the role microledgers would play have been made.
+- How does Bob communicate the updated DIDDoc to Alice when his routing information has been updated (not covered by the existing connection protocol)?
